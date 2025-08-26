@@ -1,6 +1,7 @@
 import streamlit as st
 from openai import OpenAI
 
+
 # Initialize the OpenAI client securely
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
@@ -51,7 +52,9 @@ if "messages" not in st.session_state:
     st.session_state.messages = [
         {"role": "system", "content": SYSTEM_PROMPT}
     ]
-
+if "user_input" not in st.session_state:
+    st.session_state["user_input"] = ""
+    
 # --- Display previous messages ---
 for msg in st.session_state.messages[1:]:  # skip system prompt in display
     st.write(f"**{msg['role'].capitalize()}:** {msg['content']}")
