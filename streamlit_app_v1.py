@@ -1,5 +1,9 @@
 import streamlit as st
 from openai import OpenAI
+from uuid import uuid4          # <-- add this line
+from datetime import datetime
+import json, re
+import requests
 
 # ---- Secure client ----
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
