@@ -1,5 +1,8 @@
 import streamlit as st
 from openai import OpenAI
+from datetime import datetime
+import json
+import os
 
 
 # Initialize the OpenAI client securely
@@ -45,35 +48,57 @@ If at any point, user asks questions non-related to the modem troubleshooting, t
 
 """
 
-# --- Session setup ---
-st.title("Wireless Support Bot")
 
+# --- Page Config ---
+st.set_page_config(page_title="Wireless Support Bot", page_icon="💬")
+st.title("📶 Wireless Support Bot")
+
+# --- Initialize Session State ---
 if "messages" not in st.session_state:
-    st.session_state.messages = [
-        {"role": "system", "content": SYSTEM_PROMPT}
-    ]
-if "user_input" not in st.session_state:
-    st.session_state["user_input"] = ""
-    
-# --- Display previous messages ---
-for msg in st.session_state.messages[1:]:  # skip system prompt in display
-    st.write(f"**{msg['role'].capitalize()}:** {msg['content']}")
+    st.session_state.messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
-# --- User input ---
-user_input = st.text_input("You:", value="", key="user_input")
+# --- Chat Bubble Styling ---
+USER_STYLE = "background-color:#DCF8C6;padding:8px;border-radius:10px;margin:5px 0;"
+BOT_STYLE = "background-color:#F1F0F0;padding:8px;border-radius:10px;margin:5px 0;"
 
-if user_input:
-    # Add user message to session
+# --- Display Chat History (excluding system prompt) ---
+for msg in st.session_state.messages[1:]:
+    role = msg["role"]
+    content = msg["content"]
+
+    if role == "user":
+        st.markdown(f"<div style='{USER_STYLE}'><strong>You:</strong> {content}</div>", unsafe_allow_html=True)
+    elif role == "assistant":
+        st.markdown(f"<div style='{BOT_STYLE}'><strong>Assistant:</strong> {content}</div>", unsafe_allow_html=True)
+
+# --- User Input Form (auto-clearing) ---
+with st.form("chat_form", clear_on_submit=True):
+    user_input = st.text_input("You:")
+    submitted = st.form_submit_button("Send")
+
+if submitted and user_input:
+    # Add user message
     st.session_state.messages.append({"role": "user", "content": user_input})
 
-    # Get response from OpenAI
+    # Get assistant response
     response = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=st.session_state.messages
     )
-
     reply = response.choices[0].message.content
-    st.session_state.messages.append({"role": "assistant", "content": reply})
-    st.write(f"**Assistant:** {reply}")
 
-    st.session_state["user_input"] = ""
+    # Add assistant reply
+    st.session_state.messages.append({"role": "assistant", "content": reply})
+
+    # Trigger rerun to show updated chat
+    st.rerun()
+
+# --- Save transcript locally (for researcher use only) ---
+conversation_json = json.dumps(st.session_state.messages[1:], indent=2)
+timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+filename = f"chat_transcript_{timestamp}.json"
+output_dir = "transcripts"
+os.makedirs(output_dir, exist_ok=True)
+
+with open(os.path.join(output_dir, filename), "w", encoding="utf-8") as f:
+    f.write(conversation_json)
