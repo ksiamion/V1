@@ -88,6 +88,40 @@ END_TOKEN = "[END_OF_CHAT]"
 # HELPERS
 # =========================
 
+# ---- Colored chat bubbles (helper) ----
+def render_bubble(role: str, text: str):
+    # Colors: tweak to taste
+    if role == "assistant":
+        label = "Assistant"
+        bg = "#E8F5FF"     # light blue
+        border = "#B3E0FF"
+        justify = "flex-start"   # left
+    else:
+        label = "You"
+        bg = "#FFF4E5"     # light orange
+        border = "#FFD8A8"
+        justify = "flex-end"     # right
+
+    # NOTE: If you expect HTML in messages, escape it before injecting.
+    st.markdown(
+        f"""
+        <div style="display:flex; justify-content:{justify}; margin:6px 0;">
+          <div style="
+              max-width: 85%;
+              padding: 10px 12px;
+              background: {bg};
+              border: 1px solid {border};
+              border-radius: 14px;
+              line-height: 1.45;
+              white-space: pre-wrap;
+              word-wrap: break-word;">
+            <strong>{label}:</strong><br>{text}
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
 def _messages_without_system():
     return [m for m in st.session_state.messages if m["role"] != "system"]
 
@@ -131,7 +165,7 @@ def _save_to_drive_once():
 
 def _append_assistant_reply_from_model():
     response = client.chat.completions.create(
-        model="gpt-3.5-turbo",  # keep your current model
+        model="gpt-4o",    # keep your current model
         messages=st.session_state.messages,
     )
     raw = response.choices[0].message.content or ""
@@ -160,9 +194,13 @@ if not st.session_state.bootstrapped:
 # RENDER HISTORY
 # =========================
 
-for msg in st.session_state.messages[1:]:
-    st.write(f"**{msg['role'].capitalize()}:** {msg['content']}")
+#replaced
+#for msg in st.session_state.messages[1:]:
+#    st.write(f"**{msg['role'].capitalize()}:** {msg['content']}")
+# ---- Render history (skip system prompt) ----
 
+for msg in st.session_state.messages[1:]:
+    render_bubble(msg["role"], msg["content"])
 # =========================
 # INPUT HANDLING
 # =========================
