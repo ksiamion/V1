@@ -72,6 +72,7 @@ if "prolific_id" not in st.session_state:
 if "saved_once" not in st.session_state:
     st.session_state.saved_once = False
 
+END_TOKEN = "[END_OF_CHAT]"
 # =========================
 # HELPERS
 # =========================
